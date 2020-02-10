@@ -47,6 +47,7 @@ import com.otaliastudios.cameraview.controls.VideoCodec;
 import com.otaliastudios.cameraview.controls.WhiteBalance;
 import com.otaliastudios.cameraview.engine.Camera1Engine;
 import com.otaliastudios.cameraview.engine.Camera2Engine;
+import com.otaliastudios.cameraview.engine.CameraBaseEngine;
 import com.otaliastudios.cameraview.engine.CameraEngine;
 import com.otaliastudios.cameraview.engine.offset.Reference;
 import com.otaliastudios.cameraview.engine.orchestrator.CameraState;
@@ -122,6 +123,7 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     final static boolean DEFAULT_REQUEST_PERMISSIONS = true;
     final static int DEFAULT_FRAME_PROCESSING_POOL_SIZE = 2;
     final static int DEFAULT_FRAME_PROCESSING_EXECUTORS = 1;
+    private DisplayOrientationDetector mDisplayOrientationDetector;
 
     // Self managed parameters
     private boolean mPlaySounds;
@@ -159,6 +161,8 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private boolean mExperimental;
     private boolean mInEditor;
+    private int dispOrientation = 0;
+    private int devOrientation = 0;
 
     // Overlays
     @VisibleForTesting OverlayLayout mOverlayLayout;
@@ -303,6 +307,14 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
 
         // Create the orientation helper
         mOrientationHelper = new OrientationHelper(context, mCameraCallbacks);
+        mDisplayOrientationDetector = new DisplayOrientationDetector(context) {
+            @Override
+            public void onDisplayOrDeviceOrientationChanged(int displayOrientation, int deviceOrientation) {
+              CameraView.this.dispOrientation = displayOrientation;
+              CameraView.this.devOrientation = devOrientation;
+            }
+        };
+
     }
 
     /**
@@ -348,11 +360,35 @@ public class CameraView extends FrameLayout implements LifecycleObserver {
         if (mExperimental
                 && engine == Engine.CAMERA2
                 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return new Camera2Engine(callback);
+            return new Camera2Engine(callback, new CameraBaseEngine.OrientationProvider() {
+                @Override public int deviceOrientation() {
+                    return devOrientation;
+                }
+
+                @Override public int displayOrientaion() {
+                    return dispOrientation;
+                }
+            });
         } else {
             mEngine = Engine.CAMERA1;
-            return new Camera1Engine(callback);
+            return new Camera1Engine(callback, new CameraBaseEngine.OrientationProvider() {
+                @Override public int deviceOrientation() {
+                    return devOrientation;
+                }
+
+                @Override public int displayOrientaion() {
+                    return dispOrientation;
+                }
+            });
         }
+    }
+
+    public void setDispOrientation(int dispOrientation) {
+        this.dispOrientation = dispOrientation;
+    }
+
+    public void setDevOrientation(int devOrientation) {
+        this.devOrientation = devOrientation;
     }
 
     /**

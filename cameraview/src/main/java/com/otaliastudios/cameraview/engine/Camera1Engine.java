@@ -70,9 +70,10 @@ public class Camera1Engine extends CameraBaseEngine implements
     private Camera mCamera;
     @VisibleForTesting int mCameraId;
 
-    public Camera1Engine(@NonNull Callback callback) {
-        super(callback);
+    public Camera1Engine(@NonNull Callback callback, OrientationProvider provider) {
+        super(callback, provider);
     }
+
 
     //region Utilities
 
@@ -339,12 +340,13 @@ public class Camera1Engine extends CameraBaseEngine implements
 
     @EngineThread
     @Override
-    protected void onTakePicture(@NonNull PictureResult.Stub stub, boolean doMetering) {
+    protected void onTakePicture(@NonNull PictureResult.Stub stub, boolean doMetering, int disp, int dev) {
         LOG.i("onTakePicture:", "executing.");
         stub.rotation = getAngles().offset(Reference.SENSOR, Reference.OUTPUT,
                 Axis.RELATIVE_TO_SENSOR);
         stub.size = getPictureSize(Reference.OUTPUT);
-        mPictureRecorder = new Full1PictureRecorder(stub, Camera1Engine.this, mCamera);
+
+        mPictureRecorder = new Full1PictureRecorder(stub, Camera1Engine.this, mCamera, disp, dev);
         mPictureRecorder.take();
         LOG.i("onTakePicture:", "executed.");
     }

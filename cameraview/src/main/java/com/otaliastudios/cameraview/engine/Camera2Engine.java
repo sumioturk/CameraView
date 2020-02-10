@@ -116,8 +116,8 @@ public class Camera2Engine extends CameraBaseEngine implements
     private final List<Action> mActions = new CopyOnWriteArrayList<>();
     private MeterAction mMeterAction;
 
-    public Camera2Engine(Callback callback) {
-        super(callback);
+    public Camera2Engine(Callback callback, OrientationProvider provider) {
+        super(callback, provider);
         mManager = (CameraManager) getCallback().getContext()
                 .getSystemService(Context.CAMERA_SERVICE);
         new LogAction().start(this);
@@ -802,7 +802,7 @@ public class Camera2Engine extends CameraBaseEngine implements
 
     @EngineThread
     @Override
-    protected void onTakePicture(@NonNull final PictureResult.Stub stub, boolean doMetering) {
+    protected void onTakePicture(@NonNull final PictureResult.Stub stub, boolean doMetering, int disp, int dev) {
         if (doMetering) {
             LOG.i("onTakePicture:", "doMetering is true. Delaying.");
             Action action = Actions.timeout(METER_TIMEOUT_SHORT, createMeterAction(null));

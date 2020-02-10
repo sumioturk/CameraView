@@ -72,6 +72,7 @@ public abstract class CameraBaseEngine extends CameraEngine {
     @SuppressWarnings("WeakerAccess") protected float mPreviewFrameRate;
     @SuppressWarnings("WeakerAccess") private boolean mPreviewFrameRateExact;
 
+    private final OrientationProvider orientationProvider;
     private FrameManager mFrameManager;
     private final Angles mAngles = new Angles();
     @Nullable private SizeSelector mPreviewStreamSizeSelector;
@@ -111,8 +112,9 @@ public abstract class CameraBaseEngine extends CameraEngine {
             = Tasks.forResult(null);
 
     @SuppressWarnings("WeakerAccess")
-    protected CameraBaseEngine(@NonNull Callback callback) {
+    protected CameraBaseEngine(@NonNull Callback callback, OrientationProvider provider) {
         super(callback);
+        this.orientationProvider = provider;
     }
 
     /**
@@ -506,7 +508,7 @@ public abstract class CameraBaseEngine extends CameraEngine {
                 stub.location = mLocation;
                 stub.facing = mFacing;
                 stub.format = mPictureFormat;
-                onTakePicture(stub, metering);
+                onTakePicture(stub, metering, orientationProvider.displayOrientaion(), orientationProvider.deviceOrientation());
             }
         });
     }
@@ -668,7 +670,7 @@ public abstract class CameraBaseEngine extends CameraEngine {
     }
 
     @EngineThread
-    protected abstract void onTakePicture(@NonNull PictureResult.Stub stub, boolean doMetering);
+    protected abstract void onTakePicture(@NonNull PictureResult.Stub stub, boolean doMetering, int disp, int dev);
 
     @EngineThread
     protected abstract void onTakePictureSnapshot(@NonNull PictureResult.Stub stub,
@@ -960,4 +962,9 @@ public abstract class CameraBaseEngine extends CameraEngine {
     }
 
     //endregion
+
+    public interface OrientationProvider {
+       int deviceOrientation();
+        int displayOrientaion();
+    }
 }

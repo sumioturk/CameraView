@@ -20,12 +20,19 @@ public class Full1PictureRecorder extends FullPictureRecorder {
 
     private final Camera mCamera;
     private final Camera1Engine mEngine;
+    private final int displayOrientation;
+    private final int deviceOrientation;
 
     public Full1PictureRecorder(@NonNull PictureResult.Stub stub,
                                 @NonNull Camera1Engine engine,
-                                @NonNull Camera camera) {
+                                @NonNull Camera camera,
+                                @NonNull int displayOrientation,
+                                @NonNull int deviceOrientation
+        ) {
         super(stub, engine);
         mEngine = engine;
+        this.displayOrientation = displayOrientation;
+        this.deviceOrientation = deviceOrientation;
         mCamera = camera;
 
         // We set the rotation to the camera parameters, but we don't know if the result will be
@@ -82,4 +89,27 @@ public class Full1PictureRecorder extends FullPictureRecorder {
         LOG.i("dispatching result. Thread:", Thread.currentThread());
         super.dispatchResult();
     }
+
+    private int calculateCaptureRotation(Camera camera) {
+        int captureRotation = 0;
+
+        Camera.CameraInfo mCameraInfo = null;
+        Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, mCameraInfo);
+        if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            captureRotation = (mCameraInfo.orientation + displayOrientation) % 360;
+        } else {  // back-facing camera
+            captureRotation = (mCameraInfo.orientation - displayOrientation + 360) % 360;
+        }
+
+        // Accommodate for any extra device rotation relative to fixed screen orientations
+        // (e.g. activity fixed in portrait, but user took photo/video in landscape)
+        if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            captureRotation = ((captureRotation - (displayOrientation - deviceOrientation)) + 360) % 360;
+        } else {  // back-facing camera
+            captureRotation = (captureRotation + (displayOrientation - deviceOrientation) + 360) % 360;
+        }
+
+        return captureRotation;
+    }
+
 }
